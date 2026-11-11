@@ -1,0 +1,116 @@
+# Copyright 2026 Mukilesh
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: test and build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+            apps/desktop/src-tauri -> target
+
+      - name: Check the formatting
+        run: cargo fmt --all -- --check
+
+      - name: Lint
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test the security engine and the service
+        run: cargo test --workspace
+
+      - name: Build the background service
+        run: cargo build --release -p clipguard-daemon
+
+      - name: Build the uninstaller
+        run: cargo build --release -p clipguard-uninstaller
+
+      - name: Build the dashboard
+        run: cargo build --release --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+      - name: Package the portable release
+        shell: pwsh
+        run: |
+          $portable = "dist\portable\ClipGuard"
+          New-Item -ItemType Directory -Force -Path $portable | Out-Null
+          Copy-Item "target\release\clipguard.exe" $portable
+          Copy-Item "target\release\clipguard-desktop.exe" $portable
+          Copy-Item "target\release\clipguard-uninstall.exe" (Join-Path $portable "uninstall.exe")
+          Copy-Item "LICENSE-APACHE" $portable
+          Copy-Item "NOTICE" $portable
+          Compress-Archive -Path "dist\portable\ClipGuard" -DestinationPath "dist\ClipGuard-Portable.zip" -Force
+          Remove-Item -Recurse -Force "dist\portable"
+
+      - name: Upload the portable release
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClipGuard-Portable
+          path: dist/ClipGuard-Portable.zip
+          if-no-files-found: error
+
+  release:
+    name: publish the release
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the portable release
+        uses: actions/download-artifact@v4
+        with:
+          name: ClipGuard-Portable
+          path: dist
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          notes="docs/release-notes-1.0.0.md"
+          if [ -f "$notes" ]; then
+            gh release create "${GITHUB_REF_NAME}" \
+              --title "ClipGuard ${GITHUB_REF_NAME}" \
+              --notes-file "$notes" \
+              dist/ClipGuard-Portable.zip
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              --title "ClipGuard ${GITHUB_REF_NAME}" \
+              --generate-notes \
+              dist/ClipGuard-Portable.zip
+          fi

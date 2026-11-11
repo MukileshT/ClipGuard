@@ -1,0 +1,40 @@
+# Local test extraction of the portable release
+plugtest/
+uninstalltest/
+
+# Local maintenance scripts of the maintainer.
+# They are not part of the published source.
+scripts/add-license-headers.ps1
+scripts/build-release.ps1
+scripts/generate-icons.mjs
+scripts/sanitize-secrets.ps1
+
+# Build artifacts
+/target
+**/target
+**/dist
+
+# Node.js
+node_modules
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Tauri
+gen/
+
+# Compiled executables (keep only in release folder)
+*.exe
+*.pdb
+*.dll
+
+# Local test extraction of the portable release
+plugtest/

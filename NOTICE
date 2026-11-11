@@ -1,0 +1,31 @@
+ClipGuard — clipboard security firewall
+Copyright 2026 Mukilesh <145214507+MukileshT@users.noreply.github.com>
+
+This product includes software developed by Mukilesh.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License in the LICENSE-APACHE file or at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+
+--------------------------------------------------------------------------------
+Patent and trademark notice
+--------------------------------------------------------------------------------
+
+Apache License 2.0 section 3 grants every user an express patent license from
+each contributor for the works they contribute. ClipGuard itself may be the
+subject of one or more patent applications; where that is the case, the
+corresponding patent licence is granted to every user of this software under
+the same terms, and the patent notices are published in the NOTICE file and
+in the release notes.
+
+"ClipGuard" is a trademark of Mukilesh. The licence covers the source code,
+not the name: other projects may use the code under the terms of the Apache
+License, but they may not use the name "ClipGuard" for their own product.

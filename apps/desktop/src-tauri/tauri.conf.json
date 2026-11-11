@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "ClipGuard",
+  "version": "0.1.0",
+  "identifier": "dev.mukilesh.clipguard",
+  "build": {
+    "frontendDist": "frontend"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "ClipGuard â€” clipboard security firewall",
+        "width": 1120,
+        "height": 760,
+        "minWidth": 880,
+        "minHeight": 580,
+        "resizable": true,
+        "center": true,
+        "theme": "Dark",
+        "visible": true,
+        "skipTaskbar": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "copyright": "Copyright Â© ClipGuard contributors",
+    "shortDescription": "Native clipboard security firewall",
+    "longDescription": "ClipGuard watches the clipboard, detects API keys, passwords, tokens and private keys and protects them before they reach another application. All detection happens locally.",
+    "resources": [],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  }
+}
+
+
