@@ -1,0 +1,27 @@
+[package]
+name = "clipwarden-uninstaller"
+description = "Removes ClipWarden from the computer."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+name = "clipwarden_uninstaller"
+path = "src/lib.rs"
+
+[[bin]]
+name = "clipwarden-uninstall"
+path = "src/bin/uninstall.rs"
+
+[[bin]]
+name = "clipwarden-cleanup"
+path = "src/bin/cleanup.rs"
+
+[dependencies]
+
+[target.'cfg(windows)'.dependencies.windows]
+workspace = true
+features = ["Win32_Foundation", "Win32_System_Registry"]
