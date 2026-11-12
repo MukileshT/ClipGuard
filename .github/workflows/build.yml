@@ -70,7 +70,7 @@ jobs:
           $portable = "dist\portable\ClipGuard"
           New-Item -ItemType Directory -Force -Path $portable | Out-Null
           Copy-Item "target\release\clipguard.exe" $portable
-          Copy-Item "target\release\clipguard-desktop.exe" $portable
+          Copy-Item "apps\desktop\src-tauri\target\release\clipguard-desktop.exe" $portable
           Copy-Item "target\release\clipguard-uninstall.exe" (Join-Path $portable "uninstall.exe")
           Copy-Item "LICENSE-APACHE" $portable
           Copy-Item "NOTICE" $portable
