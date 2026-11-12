@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<!-- Copyright 2026 Mukilesh -->
+<!-- -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+<!-- -->
+<!--     http://www.apache.org/licenses/LICENSE-2.0 -->
+<!-- -->
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self';" />
+<title>ClipWarden — clipboard security firewall</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app">
+<header class="topbar">
+<div class="brand">
+<span class="brand-mark" aria-hidden="true"></span>
+<div>
+<h1>ClipWarden</h1>
+<p class="brand-sub">Clipboard security firewall</p>
+</div>
+</div>
+<div class="topbar-status">
+<span id="status-pill" class="pill pill-idle">connecting…</span>
+<label class="switch">
+<input type="checkbox" id="pause-toggle" />
+<span>Paused</span>
+</label>
+</div>
+</header>
+
+<nav class="tabs" role="tablist">
+<button class="tab active" data-tab="dashboard" role="tab">Dashboard</button>
+<button class="tab" data-tab="applications" role="tab">Applications</button>
+<button class="tab" data-tab="rules" role="tab">Detection rules</button>
+<button class="tab" data-tab="templates" role="tab">Templates</button>
+<button class="tab" data-tab="settings" role="tab">Settings</button>
+<button class="tab" data-tab="about" role="tab">About</button>
+</nav>
+
+<main>
+<section id="tab-dashboard" class="tab-panel active">
+<div class="grid">
+<article class="card span-2 warning-card" id="history-card" hidden>
+<h2>Windows keeps a clipboard history</h2>
+<p class="hint" id="history-hint">
+Windows stores everything you copy in its own clipboard history (the panel that opens with
+<strong>Win+V</strong>). The original secret is recorded there <em>before</em> ClipWarden masks
+the clipboard, so it can be pasted again later — and with the cloud clipboard it even travels
+to your other devices.
+</p>
+<p class="hint">
+Turning the history off stops Windows from keeping your secrets. Entries that are already
+there have to be deleted once with <strong>Win+V → Clear</strong>.
+</p>
+<button id="history-disable" class="primary">Turn the Windows clipboard history off</button>
+</article>
+<article class="card span-2">
+<h2>What is protected</h2>
+<div class="kv-grid">
+<label class="kv checkbox">
+<input type="checkbox" id="setting-existing-quick" />
+<span>Also mask content that was copied before ClipWarden started</span>
+</label>
+</div>
+<p class="hint">
+By default only new copies are masked — the text that was already on the clipboard when
+ClipWarden started stays untouched. The switch applies immediately.
+</p>
+</article>
+<article class="card span-2">
+<h2>Protection</h2>
+<div class="kv-grid">
+<div class="kv">
+<span class="kv-label">Status</span>
+<span class="kv-value" id="status-value">—</span>
+</div>
+<div class="kv">
+<span class="kv-label">Global mode</span>
+<span class="kv-value" id="mode-value">—</span>
+</div>
+<div class="kv">
+<span class="kv-label">Default action</span>
+<span class="kv-value" id="default-mode-value">—</span>
+</div>
+<div class="kv">
+<span class="kv-label">Clipboard monitoring</span>
+<span class="kv-value" id="monitoring-value">—</span>
+</div>
+<div class="kv">
+<span class="kv-label">Paste interception</span>
+<span class="kv-value" id="intercept-value">—</span>
+</div>
+<div class="kv">
+<span class="kv-label">Start with Windows</span>
+<span class="kv-value" id="autostart-value">—</span>
+</div>
+<div class="kv">
+<span class="kv-label">Password protection</span>
+<span class="kv-value" id="password-value">—</span>
+</div>
+</div>
+<div class="mode-switch">
+<span class="kv-label">Protection mode</span>
+<div class="segmented" id="mode-switch">
+<button data-mode="ghost">Ghost</button>
+<button data-mode="satellite">Satellite</button>
+</div>
+<p class="hint" id="mode-hint"></p>
+</div>
+</article>
+
+<article class="card span-2">
+<h2>Statistics</h2>
+<div class="stat-grid">
+<div class="stat">
+<span class="stat-value" id="stat-scans">0</span>
+<span class="stat-label">Clipboard scans</span>
+</div>
+<div class="stat">
+<span class="stat-value" id="stat-detections">0</span>
+<span class="stat-label">Scans with secrets</span>
+</div>
+<div class="stat">
+<span class="stat-value" id="stat-redacted">0</span>
+<span class="stat-label">Redacted</span>
+</div>
+<div class="stat">
+<span class="stat-value" id="stat-removed">0</span>
+<span class="stat-label">Removed</span>
+</div>
+<div class="stat">
+<span class="stat-value" id="stat-blocked">0</span>
+<span class="stat-label">Blocked pastes</span>
+</div>
+<div class="stat">
+<span class="stat-value" id="stat-allowed">0</span>
+<span class="stat-label">Allowed pastes</span>
+</div>
+</div>
+</article>
+
+<article class="card">
+<h2>Detections by category</h2>
+<div id="kind-breakdown" class="breakdown">
+<p class="empty">No detections yet.</p>
+</div>
+</article>
+
+<article class="card">
+<h2>Live detections</h2>
+<div id="event-log" class="event-log">
+<p class="empty">Nothing detected so far.</p>
+</div>
+</article>
+</div>
+</section>
+
+<section id="tab-applications" class="tab-panel">
+<article class="card">
+<h2>Application rules</h2>
+<p class="hint">
+The rule with the highest specificity wins. Trusted applications are never modified.
+</p>
+<table class="table" id="app-table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Pattern</th>
+<th>Action</th>
+<th>Trusted</th>
+<th>Enabled</th>
+<th></th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</article>
+
+<article class="card">
+<h2>Add application rule</h2>
+<form id="app-form" class="form">
+<label>
+<span>Name</span>
+<input type="text" id="app-name" placeholder="My editor" required />
+</label>
+<label>
+<span>Pattern</span>
+<input type="text" id="app-pattern" placeholder="*.exe or C:\Program Files\…" required />
+</label>
+<label>
+<span>Action</span>
+<select id="app-mode">
+<option value="allow">Allow</option>
+<option value="redact" selected>Redact</option>
+<option value="remove">Remove</option>
+<option value="block">Block</option>
+</select>
+</label>
+<label class="checkbox">
+<input type="checkbox" id="app-trusted" />
+<span>Trusted (never modify)</span>
+</label>
+<button type="submit" class="primary">Add rule</button>
+</form>
+</article>
+</section>
+
+<section id="tab-rules" class="tab-panel">
+<article class="card">
+<h2>Custom rules</h2>
+<p class="hint">
+Custom rules are regular expressions. The capture group <code>group</code> selects
+which part of the match is the secret — use <code>0</code> for the whole match.
+</p>
+<table class="table" id="custom-table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Pattern</th>
+<th>Kind</th>
+<th>Risk</th>
+<th>Group</th>
+<th></th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<form id="rule-form" class="form">
+<label>
+<span>Name</span>
+<input type="text" id="rule-name" placeholder="Internal token" required />
+</label>
+<label class="wide">
+<span>Pattern</span>
+<input type="text" id="rule-pattern" placeholder="INT-[0-9A-Z]{16}" required />
+</label>
+<label>
+<span>Kind</span>
+<select id="rule-kind"></select>
+</label>
+<label>
+<span>Risk</span>
+<select id="rule-risk">
+<option value="low">Low</option>
+<option value="medium">Medium</option>
+<option value="high" selected>High</option>
+<option value="critical">Critical</option>
+</select>
+</label>
+<label>
+<span>Capture group</span>
+<input type="number" id="rule-group" value="0" min="0" max="9" />
+</label>
+<button type="submit" class="primary">Add rule</button>
+</form>
+</article>
+
+<article class="card">
+<h2>Built-in rules</h2>
+<table class="table" id="builtin-table">
+<thead>
+<tr>
+<th>Rule</th>
+<th>Category</th>
+<th>Risk</th>
+<th>Pattern</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</article>
+</section>
+
+<section id="tab-templates" class="tab-panel">
+<article class="card">
+<h2>Ready-made templates</h2>
+<p class="hint">
+Templates are ready-made detection rules. Click <strong>Add</strong> to enable one — it becomes a
+custom rule you can edit or remove at any time.
+</p>
+<div class="template-grid" id="template-grid"></div>
+</article>
+
+<article class="card">
+<h2>Protect my phone number</h2>
+<p class="hint">
+Only the exact number you enter is matched — other phone numbers are not affected.
+</p>
+<form id="phone-form" class="form">
+<label class="wide">
+<span>My phone number</span>
+<input type="text" id="phone-number" placeholder="+1 415 555 2671" />
+</label>
+<button type="submit" class="primary">Add my number</button>
+</form>
+</article>
+</section>
+
+<section id="tab-settings" class="tab-panel">
+<article class="card">
+<h2>General</h2>
+<p class="hint">
+Everything here is stored in <code>%APPDATA%\ClipWarden\config.toml</code> and applies
+immediately — no restart needed.
+</p>
+<div class="kv-grid">
+<label class="kv">
+<span class="kv-label">Global mode</span>
+<select id="setting-global-mode">
+<option value="ghost">Ghost — protect on copy (recommended)</option>
+<option value="satellite">Satellite — decide when pasting</option>
+</select>
+</label>
+<label class="kv">
+<span class="kv-label">Fail-safe</span>
+<select id="setting-failsafe">
+<option value="redact">Redact (recommended)</option>
+<option value="remove">Remove</option>
+<option value="allow">Allow</option>
+</select>
+</label>
+<label class="kv checkbox">
+<input type="checkbox" id="setting-monitor" />
+<span>Monitor the clipboard</span>
+</label>
+<label class="kv checkbox">
+<input type="checkbox" id="setting-paste" />
+<span>Intercept paste shortcuts</span>
+</label>
+<label class="kv checkbox">
+<input type="checkbox" id="setting-restore" />
+<span>Restore the original for trusted applications</span>
+</label>
+<label class="kv checkbox">
+<input type="checkbox" id="setting-notifications" />
+<span>Show notifications</span>
+</label>
+<label class="kv checkbox">
+<input type="checkbox" id="setting-existing" />
+<span>Also mask content that was copied before ClipWarden started</span>
+</label>
+<label class="kv checkbox">
+<input type="checkbox" id="setting-autostart" />
+<span>Start with Windows</span>
+</label>
+</div>
+<p class="hint">
+By default only new copies are masked — the text that was already on the clipboard
+when ClipWarden started stays untouched.
+</p>
+<p class="hint">
+The system tray icon is always visible — it is the only place where ClipWarden can be
+paused, opened or quit.
+</p>
+</article>
+
+<article class="card">
+<h2>Protection</h2>
+<div class="kv-grid">
+<label class="kv">
+<span class="kv-label">Default action</span>
+<select id="setting-default-mode">
+<option value="allow">Allow — leave the content untouched</option>
+<option value="redact">Redact — replace the secret</option>
+<option value="remove">Remove — cut the secret out</option>
+<option value="block">Block — prevent the paste</option>
+</select>
+</label>
+<label class="kv">
+<span class="kv-label">Placeholder</span>
+<input type="text" id="setting-placeholder" placeholder="[REDACTED]" />
+</label>
+</div>
+<button id="save-settings" class="primary">Save settings</button>
+</article>
+
+<article class="card">
+<h2>Detection tuning</h2>
+<div class="kv-grid">
+<label class="kv checkbox">
+<input type="checkbox" id="detect-personal" />
+<span>Detect personal information (email, phone, card, SSN, IBAN)</span>
+</label>
+<label class="kv checkbox">
+<input type="checkbox" id="entropy-context" />
+<span>Entropy detection requires a keyword near the token</span>
+</label>
+<label class="kv">
+<span class="kv-label">Entropy threshold</span>
+<input type="number" id="entropy-threshold" step="0.1" min="2" max="6" />
+</label>
+<label class="kv">
+<span class="kv-label">Minimum token length</span>
+<input type="number" id="entropy-min-length" step="1" min="8" max="128" />
+</label>
+</div>
+</article>
+
+<article class="card">
+<h2>Password</h2>
+<p class="hint" id="password-hint">No password is set — the dashboard opens without a prompt.</p>
+<form id="password-form" class="form">
+<label class="wide">
+<span>New password</span>
+<input type="password" id="password-new" autocomplete="new-password" />
+</label>
+<label class="wide">
+<span>Repeat the new password</span>
+<input type="password" id="password-confirm" autocomplete="new-password" />
+</label>
+<label class="wide">
+<span>Current password (only needed when one is already set)</span>
+<input type="password" id="password-current" autocomplete="current-password" />
+</label>
+<div class="form-actions">
+<button type="submit" class="primary">Set password</button>
+<button type="button" id="password-remove">Remove password</button>
+</div>
+</form>
+</article>
+
+<article class="card">
+<h2>Files and folders</h2>
+<p class="hint">ClipWarden keeps everything in your user profile — no data is written elsewhere.</p>
+<div class="kv-grid" id="paths-grid"></div>
+</article>
+</section>
+
+<section id="tab-about" class="tab-panel">
+<article class="card">
+<h2>About ClipWarden</h2>
+<p>
+ClipWarden is a native Windows clipboard security firewall. It watches the clipboard,
+detects credentials and personal data locally and protects them before they reach
+another application.
+</p>
+<ul class="facts">
+<li>All detection happens on this machine — there is no network traffic.</li>
+<li>Secrets never appear in logs, statistics or the configuration file.</li>
+<li>No clipboard history is stored.</li>
+<li>No administrator privileges are required.</li>
+</ul>
+<p class="hint">
+Windows does not offer a race free API to intercept every paste. ClipWarden combines
+clipboard monitoring, controlled clipboard replacement and a low level keyboard hook.
+It reduces accidental exposure, it does not guarantee that no data ever leaves the
+machine.
+</p>
+</article>
+</section>
+</main>
+
+<footer class="footer">
+<span id="footer-status">ClipWarden — offline first, local only.</span>
+</footer>
+</div>
+
+<!-- Login screen (shown when password protection is enabled) -->
+<section id="login-screen" class="tab-panel" style="display:none;">
+<div class="login-card">
+<div class="brand-mark" aria-hidden="true"></div>
+<h2>ClipWarden — Unlock</h2>
+<p>Enter your password to access the dashboard.</p>
+<form id="login-form">
+<label>
+<span>Password</span>
+<input type="password" id="login-password" placeholder="Enter password" required />
+</label>
+<button type="submit" class="primary">Unlock</button>
+</form>
+<p class="hint" id="login-error" style="color:var(--danger);"></p>
+</div>
+</section>
+
+<script src="main.js"></script>
+</body>
+</html>
